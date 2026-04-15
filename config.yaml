@@ -1,0 +1,401 @@
+# ===========================================
+# MATRIX AGENTIC MONEY SYSTEM - Config
+# ===========================================
+
+system:
+  name: "MAMS - Matrix Agentic Money System"
+  version: "1.0.0"
+  mode: "autonomous"  # autonomous, supervised, debug
+  log_level: "INFO"
+  timezone: "America/New_York"
+  
+  # Configuración de Autonomía
+  autonomy:
+    auto_approval_limit: 100  # USD - transacciones menores se aprueban automáticamente
+    require_human_approval_above: 1000  # USD - requerir aprobación humana
+    max_daily_budget: 500  # USD - presupuesto diario máximo
+    max_concurrent_agents: 10
+    task_timeout_seconds: 300
+    retry_attempts: 3
+    
+  # Metas de Revenue
+  revenue_targets:
+    daily: 333  # $10K/mes
+    weekly: 2333
+    monthly: 10000
+    yearly: 120000
+
+# ===========================================
+# AGENTE DIRECTOR (CEO)
+# ===========================================
+director:
+  name: "Director Agent"
+  role: "Chief Executive Orchestrator"
+  
+  decision_thresholds:
+    immediate_action: 50  # Tomar acción inmediata si ROI > 50%
+    investigate_deeper: 30
+    escalate_to_human: 1000  # Escalar si valor > $1000
+    
+  scan_interval_minutes: 5
+  priority_weights:
+    revenue_impact: 0.4
+    speed: 0.3
+    risk: 0.3
+
+# ===========================================
+# DIVISIÓN DE INVESTIGACIÓN
+# ===========================================
+researcher:
+  name: "Researcher Agent"
+  role: "Market Intelligence Specialist"
+  
+  sources:
+    - name: "Google Trends"
+      enabled: true
+      priority: 1
+    - name: "News API"
+      enabled: true
+      priority: 2
+    - name: "Social Media"
+      enabled: true
+      priority: 2
+    - name: "Competitor Analysis"
+      enabled: true
+      priority: 3
+    - name: "Reddit/Forums"
+      enabled: true
+      priority: 3
+      
+  search_interval_minutes: 15
+  trending_threshold: 1000  # Búsquedas mínimas para considerar trending
+  competition_analysis_depth: 5  # Número de competidores a analizar
+
+# ===========================================
+# DIVISIÓN DE CREACIÓN
+# ===========================================
+creator:
+  name: "Creator Agent"
+  role: "Content Production Specialist"
+  
+  content_types:
+    blog_post:
+      enabled: true
+      min_words: 1500
+      max_words: 3000
+      publish_ratio: 0.8
+    social_post:
+      enabled: true
+      frequency_per_day: 10
+      platforms: ["twitter", "linkedin", "instagram"]
+    email_sequence:
+      enabled: true
+      emails_in_sequence: 5
+    video_script:
+      enabled: true
+      max_duration_minutes: 10
+    product_description:
+      enabled: true
+      min_chars: 500
+      
+  quality_standards:
+    min_readability_score: 60
+    max_plagiarism_score: 10
+    require_images: true
+    min_images_per_post: 3
+    
+  templates:
+    - "How-to guides"
+    - "Listicles"
+    - "Comparisons"
+    - "Reviews"
+    - "Case Studies"
+    - "Infographics"
+
+# ===========================================
+# DIVISIÓN DE MARKETING
+# ===========================================
+marketer:
+  name: "Marketer Agent"
+  role: "Growth & Distribution Specialist"
+  
+  channels:
+    seo:
+      enabled: true
+      max_backlinks_per_day: 50
+      target_keywords_per_week: 100
+    social_media:
+      enabled: true
+      platforms: ["twitter", "linkedin", "facebook", "instagram", "tiktok"]
+      posts_per_day: 15
+    email_marketing:
+      enabled: true
+      cold_email_limit: 100
+      newsletter_frequency: "weekly"
+    paid_ads:
+      enabled: true
+      platforms: ["google", "facebook", "tiktok"]
+      max_daily_spend: 200
+      target_cpc: 1.50
+    content_distribution:
+      enabled: true
+      syndication_sites: 10
+      
+  seo_config:
+    keyword_difficulty_max: 50
+    min_domain_authority: 20
+    link_building_strategy: "outreach"
+    
+  audience_targeting:
+    age_ranges: ["25-34", "35-44"]
+    interests: ["technology", "business", "finance"]
+    locations: ["US", "UK", "ES"]
+
+# ===========================================
+# DIVISIÓN DE VENTAS
+# ===========================================
+sales:
+  name: "Sales Agent"
+  role: "Revenue Generation Specialist"
+  
+  monetization_methods:
+    affiliate_marketing:
+      enabled: true
+      networks: ["amazon", "cj", "shareasale", "custom"]
+      commission_threshold: 5  # % mínimo de comisión
+      cookie_duration_days: 30
+    digital_products:
+      enabled: true
+      types: ["ebook", "course", "template", "software"]
+      price_range: [9.99, 297.00]
+    services:
+      enabled: true
+      types: ["consulting", "freelance", "agency"]
+      hourly_rate_range: [50, 500]
+    subscriptions:
+      enabled: true
+      tiers:
+        - name: "Basic"
+          price: 9.99
+          features: ["basic_access"]
+        - name: "Pro"
+          price: 29.99
+          features: ["basic_access", "premium_content", "support"]
+        - name: "Enterprise"
+          price: 99.99
+          features: ["everything", "dedicated_support", "custom"]
+          
+  conversion_optimization:
+    ab_test_enabled: true
+    test_duration_days: 7
+    min_sample_size: 1000
+    cta_variants: [" urgency", "benefits", "social_proof", "fear"]
+    
+  funnels:
+    lead_magnet:
+      enabled: true
+      lead_value: 5  # USD por lead
+    tripwire:
+      enabled: true
+      price: 9.99
+    core_offer:
+      enabled: true
+      price_range: [47, 297]
+    continuity:
+      enabled: true
+      monthly_value: 29.99
+
+# ===========================================
+# DIVISIÓN DE ANÁLISIS
+# ===========================================
+analyst:
+  name: "Analyst Agent"
+  role: "Business Intelligence Specialist"
+  
+  metrics_tracked:
+    - "revenue"
+    - "conversions"
+    - "traffic"
+    - "engagement"
+    - "roi"
+    - "cac"
+    - "ltv"
+    - "churn_rate"
+    
+  reporting:
+    frequency: "daily"
+    include_forecasts: true
+    include_recommendations: true
+    
+  forecasting:
+    horizon_days: 30
+    confidence_interval: 0.95
+    models: ["linear", "exponential", "seasonal"]
+    
+  alerts:
+    revenue_drop_threshold: -20  # %
+    conversion_drop_threshold: -15  # %
+    unusual_activity_threshold: 3  # std deviations
+
+# ===========================================
+# AGENTE DE CALIDAD
+# ===========================================
+quality:
+  name: "Quality Agent"
+  role: "Quality Assurance Specialist"
+  
+  checks:
+    content_quality:
+      enabled: true
+      min_quality_score: 75
+      plagiarism_threshold: 10
+      readability_min: 60
+    technical_seo:
+      enabled: true
+      check_meta: true
+      check_sitemap: true
+      check_speed: true
+    brand_consistency:
+      enabled: true
+      check_tone: true
+      check_voice: true
+      check_visual: true
+      
+  continuous_improvement:
+    ab_testing_enabled: true
+    test_iterations_per_week: 5
+    improvement_threshold: 5  # % mejora mínima para implementar
+
+# ===========================================
+# AGENTE DE CUMPLIMIENTO
+# ===========================================
+compliance:
+  name: "Compliance Agent"
+  role: "Legal & Ethics Specialist"
+  
+  checks:
+    copyright:
+      enabled: true
+      block_unlicensed: true
+    privacy:
+      enabled: true
+      check_gdpr: true
+      check_ccpa: true
+    advertising:
+      enabled: true
+      check_disclosures: true
+      check_claims: true
+    affiliate:
+      enabled: true
+      require_disclaimer: true
+      check_ FTC: true
+      
+  approval_workflow:
+    require_review_for:
+      - "health_claims"
+      - "financial_products"
+      - "legal_services"
+      - "investments"
+
+# ===========================================
+# AGENTE FINANCIERO
+# ===========================================
+finance:
+  name: "Finance Agent"
+  role: "Financial Operations Specialist"
+  
+  accounts:
+    - name: "Operating"
+      percentage: 70
+    - name: "Marketing"
+      percentage: 20
+    - name: "Reserve"
+      percentage: 10
+      
+  expense_categories:
+    - "advertising"
+    - "tools"
+    - "outsourcing"
+    - "infrastructure"
+    
+  invoicing:
+    enabled: true
+    auto_send_days: 30
+    
+  tax:
+    auto_calculate: true
+    reserve_percentage: 25
+
+# ===========================================
+# DASHBOARD & MONITORING
+# ===========================================
+dashboard:
+  port: 8050
+  refresh_seconds: 30
+  
+  widgets:
+    - "revenue_chart"
+    - "traffic_sources"
+    - "conversion_funnel"
+    - "agent_performance"
+    - "alerts_feed"
+    - "revenue_forecast"
+    
+  notifications:
+    slack_enabled: true
+    email_enabled: true
+    sms_enabled: false
+    
+  alert_channels:
+    revenue_milestones: true
+    system_errors: true
+    unusual_activity: true
+    task_completion: false
+
+# ===========================================
+# BASE DE DATOS
+# ===========================================
+database:
+  type: "sqlite"  # sqlite, postgres, supabase
+  path: "data/mams.db"
+  backup_enabled: true
+  backup_interval_hours: 6
+
+# ===========================================
+# SCHEDULING
+# ===========================================
+scheduler:
+  timezone: "America/New_York"
+  
+  jobs:
+    - name: "Market Scan"
+      schedule: "*/15 * * * *"
+      agents: ["researcher"]
+    - name: "Content Generation"
+      schedule: "0 8,12,18 * * *"
+      agents: ["creator"]
+    - name: "Distribution Push"
+      schedule: "0 9,14,20 * * *"
+      agents: ["marketer"]
+    - name: "Sales Review"
+      schedule: "0 */2 * * *"
+      agents: ["sales", "analyst"]
+    - name: "Quality Audit"
+      schedule: "0 2 * * *"
+      agents: ["quality"]
+    - name: "Finance Report"
+      schedule: "0 6 * * *"
+      agents: ["finance"]
+    - name: "System Health Check"
+      schedule: "*/5 * * * *"
+      agents: ["director"]
+
+# ===========================================
+# SEGURIDAD
+# ===========================================
+security:
+  api_key_rotation_days: 90
+  require_2fa: true
+  audit_log_enabled: true
+  max_login_attempts: 3
+  session_timeout_minutes: 30
