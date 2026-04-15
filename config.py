@@ -110,6 +110,7 @@ class EnvConfig:
     
     # AI APIs
     OPENAI_API_KEY: Optional[str] = None
+    OPENAI_BASE_URL: Optional[str] = None  # Added for Groq/OpenRouter support
     ANTHROPIC_API_KEY: Optional[str] = None
     
     # Search & News
