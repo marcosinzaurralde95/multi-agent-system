@@ -57,10 +57,20 @@ class MemoryEntry:
     
     @classmethod
     def from_dict(cls, data: Dict) -> "MemoryEntry":
+        raw_value = data.get("value", "")
+        parsed_value = raw_value
+        if isinstance(raw_value, str):
+            stripped = raw_value.strip()
+            if stripped.startswith("{") or stripped.startswith("["):
+                try:
+                    parsed_value = json.loads(raw_value)
+                except json.JSONDecodeError:
+                    parsed_value = raw_value
+
         return cls(
             id=data.get("id"),
             key=data.get("key", ""),
-            value=json.loads(data["value"]) if isinstance(data.get("value"), str) and data["value"].startswith("[") or (isinstance(data.get("value"), str) and "{" in data["value"]) else data.get("value", ""),
+            value=parsed_value,
             memory_type=data.get("memory_type", MemoryType.SHORT_TERM.value),
             agent_id=data.get("agent_id", ""),
             tags=json.loads(data["tags"]) if isinstance(data.get("tags"), str) else data.get("tags", []),
@@ -258,9 +268,8 @@ class SharedMemory:
                 
                 cursor.execute(query, params)
                 results = cursor.fetchall()
-                conn.close()
-                
                 columns = [desc[0] for desc in cursor.description]
+                conn.close()
                 entries = []
                 for row in results:
                     entries.append(MemoryEntry.from_dict(dict(zip(columns, row))))

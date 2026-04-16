@@ -1,0 +1,30 @@
+version: "3.9"
+
+services:
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["python", "start.py", "worker"]
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    restart: unless-stopped
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["python", "start.py", "dashboard", "--port", "8050"]
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    ports:
+      - "8050:8050"
+    depends_on:
+      - worker
+    restart: unless-stopped

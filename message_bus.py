@@ -8,7 +8,7 @@ import asyncio
 import threading
 import time
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional, Callable
 from dataclasses import dataclass, field
 from enum import Enum
@@ -200,6 +200,25 @@ class MessageBus:
                 self.agents[agent_id]["last_heartbeat"] = datetime.now()
     
     # === Message Sending ===
+
+    def _normalize_priority(self, priority: Any) -> MessagePriority:
+        """Normalize priority from enum/int/string values."""
+        if isinstance(priority, MessagePriority):
+            return priority
+
+        if isinstance(priority, int):
+            for enum_value in MessagePriority:
+                if enum_value.value == priority:
+                    return enum_value
+            return MessagePriority.NORMAL
+
+        if isinstance(priority, str):
+            try:
+                return MessagePriority[priority.upper()]
+            except KeyError:
+                return MessagePriority.NORMAL
+
+        return MessagePriority.NORMAL
     
     def send_message(
         self,
@@ -213,15 +232,22 @@ class MessageBus:
         expires_in_seconds: int = 3600,
     ) -> Message:
         """Send a message to an agent or broadcast"""
+        normalized_priority = self._normalize_priority(priority)
+        expires_at = (
+            datetime.now() + timedelta(seconds=expires_in_seconds)
+            if expires_in_seconds
+            else None
+        )
+
         msg = Message(
             type=message_type.value,
             sender=sender,
             recipient=recipient,
             subject=subject,
             content=content,
-            priority=priority.value,
+            priority=normalized_priority.value,
             correlation_id=correlation_id,
-            expires_at=datetime.now().timestamp() + expires_in_seconds if expires_in_seconds else None,
+            expires_at=expires_at,
         )
         
         with self.lock:
@@ -333,13 +359,20 @@ class MessageBus:
         metadata: Dict = None,
     ) -> Task:
         """Create a new task"""
+        normalized_priority = self._normalize_priority(priority)
+        deadline = (
+            datetime.now() + timedelta(seconds=deadline_seconds)
+            if deadline_seconds
+            else None
+        )
+
         task = Task(
             type=task_type,
             description=description,
             assigned_to=assigned_to,
-            priority=priority.value,
+            priority=normalized_priority.value,
             input_data=input_data or {},
-            deadline=datetime.now().timestamp() + deadline_seconds if deadline_seconds else None,
+            deadline=deadline,
             metadata=metadata or {},
         )
         
@@ -354,7 +387,7 @@ class MessageBus:
             message_type=MessageType.TASK_ASSIGN,
             subject=f"New task: {task_type}",
             content=task.to_dict(),
-            priority=priority,
+            priority=normalized_priority,
         )
         
         logger.info(f"Task created: {task.id} -> {assigned_to}")
@@ -531,7 +564,7 @@ class MessageBus:
             message_type=MessageType.ESCALATION,
             subject=f"ESCALATION: {subject}",
             content=details,
-            priority=urgency.value,
+            priority=urgency,
         )
     
     # === Statistics ===

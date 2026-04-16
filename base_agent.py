@@ -7,6 +7,7 @@ import time
 import uuid
 import threading
 import asyncio
+import copy
 from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Dict, Any, List, Optional, Callable
@@ -16,6 +17,7 @@ import loguru
 
 from message_bus import MessageBus, MessageType, MessagePriority, get_message_bus, Message
 from memory import SharedMemory, MemoryType, get_memory
+from llm_service import get_llm_service
 
 logger = loguru.logger
 
@@ -84,6 +86,7 @@ class BaseAgent(ABC):
         # Dependencies
         self.message_bus = get_message_bus()
         self.memory = get_memory()
+        self.llm = get_llm_service()
         
         # Threading
         self._running = False
@@ -239,7 +242,14 @@ class BaseAgent(ABC):
             
             # Callback
             if self.on_task_completed:
-                self.on_task_completed(task_id, result)
+                self.on_task_completed(
+                    self.agent_id,
+                    {
+                        "task_id": task_id,
+                        "task_type": task_type,
+                        "result": result,
+                    },
+                )
             
             logger.info(f"Task completed: {task_id} in {execution_time:.2f}s")
             
@@ -330,6 +340,34 @@ class BaseAgent(ABC):
     def handle_query(self, query: str) -> Any:
         """Handle a query. Override in subclasses."""
         return {"error": "Query not supported"}
+
+    def enrich_with_llm(
+        self,
+        task_type: str,
+        description: str,
+        input_data: Dict[str, Any],
+        rule_output: Dict[str, Any],
+        required_fields: Optional[List[str]] = None,
+    ) -> Dict[str, Any]:
+        """Merge deterministic rules with OpenRouter output when available."""
+        base_output = copy.deepcopy(rule_output) if isinstance(rule_output, dict) else {"result": rule_output}
+
+        llm_output = self.llm.generate_task_payload(
+            agent_id=self.agent_id,
+            task_type=task_type,
+            description=description,
+            input_data=input_data,
+            rule_context=base_output,
+            required_fields=required_fields or [],
+        )
+
+        for key, value in llm_output.items():
+            if key not in base_output or base_output[key] in (None, "", [], {}):
+                base_output[key] = value
+
+        base_output.setdefault("source", llm_output.get("source", "rules"))
+        base_output.setdefault("generated_at", datetime.now().isoformat())
+        return base_output
     
     # === Default Tools ===
     

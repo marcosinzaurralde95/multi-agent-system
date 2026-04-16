@@ -4,14 +4,19 @@ Configuration Module
 """
 
 import os
-import yaml
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Any, Optional
-from dataclasses import dataclass, field
+from typing import Any, Dict, Optional
+
+import yaml
 from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
+
+
+class ConfigValidationError(ValueError):
+    """Configuration schema or runtime validation error."""
 
 
 @dataclass
@@ -21,8 +26,6 @@ class SystemConfig:
     mode: str = "autonomous"
     log_level: str = "INFO"
     timezone: str = "America/New_York"
-    
-    # Autonomy settings
     auto_approval_limit: float = 100
     require_human_approval_above: float = 1000
     max_daily_budget: float = 500
@@ -59,146 +62,158 @@ class Config:
 
     @classmethod
     def load(cls, config_path: str = "config.yaml") -> "Config":
-        """Load configuration from YAML file"""
-        with open(config_path, 'r') as f:
-            data = yaml.safe_load(f)
-        
-        system_data = data.get('system', {})
+        """Load configuration from YAML file and validate required sections."""
+        path = Path(config_path)
+        if not path.exists():
+            raise ConfigValidationError(f"Configuration file not found: {config_path}")
+
+        with path.open("r", encoding="utf-8") as f:
+            data = yaml.safe_load(f) or {}
+
+        if not isinstance(data, dict):
+            raise ConfigValidationError("Configuration root must be a YAML mapping.")
+
+        system_data = data.get("system", {}) or {}
+        if not isinstance(system_data, dict):
+            raise ConfigValidationError("'system' section must be a mapping.")
+
+        autonomy = system_data.get("autonomy", {}) or {}
+        if not isinstance(autonomy, dict):
+            raise ConfigValidationError("'system.autonomy' section must be a mapping.")
+
+        # Support both top-level revenue_targets and legacy system.revenue_targets.
+        targets = data.get("revenue_targets") or system_data.get("revenue_targets") or {}
+        if not isinstance(targets, dict):
+            raise ConfigValidationError("'revenue_targets' section must be a mapping.")
+
+        compliance = data.get("compliance", {}) or {}
+        compliance_checks = compliance.get("checks", {}) or {}
+        affiliate_checks = compliance_checks.get("affiliate", {}) or {}
+        if "check_ FTC" in affiliate_checks and "check_ftc" not in affiliate_checks:
+            affiliate_checks["check_ftc"] = affiliate_checks["check_ FTC"]
+        if affiliate_checks:
+            compliance_checks["affiliate"] = affiliate_checks
+            compliance["checks"] = compliance_checks
+
         system = SystemConfig(
-            name=system_data.get('name', 'MAMS'),
-            version=system_data.get('version', '1.0.0'),
-            mode=system_data.get('mode', 'autonomous'),
-            log_level=system_data.get('log_level', 'INFO'),
-            timezone=system_data.get('timezone', 'America/New_York'),
-            auto_approval_limit=system_data.get('autonomy', {}).get('auto_approval_limit', 100),
-            require_human_approval_above=system_data.get('autonomy', {}).get('require_human_approval_above', 1000),
-            max_daily_budget=system_data.get('autonomy', {}).get('max_daily_budget', 500),
-            max_concurrent_agents=system_data.get('autonomy', {}).get('max_concurrent_agents', 10),
-            task_timeout_seconds=system_data.get('autonomy', {}).get('task_timeout_seconds', 300),
-            retry_attempts=system_data.get('autonomy', {}).get('retry_attempts', 3),
+            name=system_data.get("name", "MAMS"),
+            version=system_data.get("version", "1.0.0"),
+            mode=system_data.get("mode", "autonomous"),
+            log_level=system_data.get("log_level", "INFO"),
+            timezone=system_data.get("timezone", "America/New_York"),
+            auto_approval_limit=float(autonomy.get("auto_approval_limit", 100)),
+            require_human_approval_above=float(autonomy.get("require_human_approval_above", 1000)),
+            max_daily_budget=float(autonomy.get("max_daily_budget", 500)),
+            max_concurrent_agents=int(autonomy.get("max_concurrent_agents", 10)),
+            task_timeout_seconds=int(autonomy.get("task_timeout_seconds", 300)),
+            retry_attempts=int(autonomy.get("retry_attempts", 3)),
         )
-        
-        targets = data.get('revenue_targets', {})
+
         revenue_targets = RevenueTargets(
-            daily=targets.get('daily', 333),
-            weekly=targets.get('weekly', 2333),
-            monthly=targets.get('monthly', 10000),
-            yearly=targets.get('yearly', 120000),
+            daily=float(targets.get("daily", 333)),
+            weekly=float(targets.get("weekly", 2333)),
+            monthly=float(targets.get("monthly", 10000)),
+            yearly=float(targets.get("yearly", 120000)),
         )
-        
+
+        required_sections = (
+            "director",
+            "researcher",
+            "creator",
+            "marketer",
+            "sales",
+            "analyst",
+            "quality",
+            "compliance",
+            "finance",
+            "dashboard",
+            "database",
+            "scheduler",
+            "security",
+        )
+        missing = [section for section in required_sections if section not in data]
+        if missing:
+            raise ConfigValidationError(
+                "Missing required configuration sections: " + ", ".join(missing)
+            )
+
+        database = data.get("database", {}) or {}
+        if not database.get("path"):
+            database["path"] = "data/mams_memory.db"
+
         return cls(
             system=system,
             revenue_targets=revenue_targets,
-            director=data.get('director', {}),
-            researcher=data.get('researcher', {}),
-            creator=data.get('creator', {}),
-            marketer=data.get('marketer', {}),
-            sales=data.get('sales', {}),
-            analyst=data.get('analyst', {}),
-            quality=data.get('quality', {}),
-            compliance=data.get('compliance', {}),
-            finance=data.get('finance', {}),
-            dashboard=data.get('dashboard', {}),
-            database=data.get('database', {}),
-            scheduler=data.get('scheduler', {}),
-            security=data.get('security', {}),
+            director=data.get("director", {}),
+            researcher=data.get("researcher", {}),
+            creator=data.get("creator", {}),
+            marketer=data.get("marketer", {}),
+            sales=data.get("sales", {}),
+            analyst=data.get("analyst", {}),
+            quality=data.get("quality", {}),
+            compliance=compliance,
+            finance=data.get("finance", {}),
+            dashboard=data.get("dashboard", {}),
+            database=database,
+            scheduler=data.get("scheduler", {}),
+            security=data.get("security", {}),
         )
 
 
+@dataclass
 class EnvConfig:
-    """Environment variable configuration"""
-    
-    # AI APIs
+    """Environment variable configuration."""
+
     OPENAI_API_KEY: Optional[str] = None
-    OPENAI_BASE_URL: Optional[str] = None  # Added for Groq/OpenRouter support
-    ANTHROPIC_API_KEY: Optional[str] = None
-    
-    # Search & News
-    NEWS_API_KEY: Optional[str] = None
-    SERPER_API_KEY: Optional[str] = None
-    
-    # Affiliate
-    AMAZON_ASSOCIATE_TAG: Optional[str] = None
-    CJ_AFFILIATE_ID: Optional[str] = None
-    SHAREASALE_ID: Optional[str] = None
-    
-    # Ads
-    GOOGLE_ADS_API_KEY: Optional[str] = None
-    FACEBOOK_ADS_API_KEY: Optional[str] = None
-    TIKTOK_ADS_API_KEY: Optional[str] = None
-    
-    # Analytics
-    GA4_PROPERTY_ID: Optional[str] = None
-    POSTHOG_API_KEY: Optional[str] = None
-    
-    # Trading
-    ALPACA_API_KEY: Optional[str] = None
-    ALPACA_SECRET_KEY: Optional[str] = None
-    BINANCE_API_KEY: Optional[str] = None
-    BINANCE_SECRET_KEY: Optional[str] = None
-    
-    # Email
-    SENDGRID_API_KEY: Optional[str] = None
-    MAILCHIMP_API_KEY: Optional[str] = None
-    
-    # SMS
-    TWILIO_ACCOUNT_SID: Optional[str] = None
-    TWILIO_AUTH_TOKEN: Optional[str] = None
-    TWILIO_PHONE: Optional[str] = None
-    
-    # Payments
-    STRIPE_API_KEY: Optional[str] = None
-    PAYPAL_CLIENT_ID: Optional[str] = None
-    PAYPAL_SECRET: Optional[str] = None
-    
-    # Social
-    TWITTER_API_KEY: Optional[str] = None
-    TWITTER_API_SECRET: Optional[str] = None
-    LINKEDIN_API_KEY: Optional[str] = None
-    
-    # Infrastructure
-    SUPABASE_URL: Optional[str] = None
-    SUPABASE_KEY: Optional[str] = None
-    SENTRY_DSN: Optional[str] = None
-    SLACK_WEBHOOK_URL: Optional[str] = None
-    
-    # System
+    OPENAI_BASE_URL: Optional[str] = None
+    OPENROUTER_MODEL: str = "openai/gpt-4o-mini"
     LOG_LEVEL: str = "INFO"
     AUTO_APPROVAL_LIMIT: float = 100
     MAX_DAILY_SPEND: float = 500
     REVENUE_TARGET: float = 10000
-    
+
     @classmethod
     def load(cls) -> "EnvConfig":
-        """Load all environment variables"""
-        config = cls()
-        for key in dir(config):
-            if key.isupper() and not key.startswith('_'):
-                value = os.getenv(key)
-                if value is not None:
-                    setattr(config, key, value)
+        config = cls(
+            OPENAI_API_KEY=os.getenv("OPENAI_API_KEY"),
+            OPENAI_BASE_URL=os.getenv("OPENAI_BASE_URL"),
+            OPENROUTER_MODEL=os.getenv("OPENROUTER_MODEL", "openai/gpt-4o-mini"),
+            LOG_LEVEL=os.getenv("LOG_LEVEL", "INFO"),
+            AUTO_APPROVAL_LIMIT=float(os.getenv("AUTO_APPROVAL_LIMIT", "100")),
+            MAX_DAILY_SPEND=float(os.getenv("MAX_DAILY_SPEND", "500")),
+            REVENUE_TARGET=float(os.getenv("REVENUE_TARGET", "10000")),
+        )
         return config
-    
+
     def get(self, key: str, default: Any = None) -> Any:
-        """Get environment variable with default"""
         return os.getenv(key, default)
-    
+
     def __getitem__(self, key: str) -> Any:
-        """Dict-style access"""
         return os.getenv(key)
-    
+
     def __contains__(self, key: str) -> bool:
-        """Check if key exists"""
         return key in os.environ
 
+    def validate_openrouter(self, strict: bool = True) -> None:
+        missing = []
+        if not self.OPENAI_API_KEY:
+            missing.append("OPENAI_API_KEY")
+        if not self.OPENAI_BASE_URL:
+            missing.append("OPENAI_BASE_URL")
 
-# Global config instance
+        if strict and missing:
+            raise ConfigValidationError(
+                "Missing required OpenRouter environment variables: "
+                + ", ".join(missing)
+                + ". Configure them in .env before starting worker/run."
+            )
+
+
 _config: Optional[Config] = None
 _env_config: Optional[EnvConfig] = None
 
 
 def get_config() -> Config:
-    """Get global configuration"""
     global _config
     if _config is None:
         _config = Config.load()
@@ -206,20 +221,24 @@ def get_config() -> Config:
 
 
 def get_env_config() -> EnvConfig:
-    """Get environment configuration"""
     global _env_config
     if _env_config is None:
         _env_config = EnvConfig.load()
     return _env_config
 
 
-# Convenience functions
+def validate_runtime(require_openrouter: bool = True) -> Dict[str, Any]:
+    """Validate config + env and return loaded values for startup paths."""
+    cfg = get_config()
+    env = get_env_config()
+    env.validate_openrouter(strict=require_openrouter)
+    return {"config": cfg, "env": env}
+
+
 def get_api_key(provider: str) -> Optional[str]:
-    """Get API key for a provider"""
     return get_env_config().get(f"{provider.upper()}_API_KEY")
 
 
 def get_revenue_target(period: str = "monthly") -> float:
-    """Get revenue target for a period"""
     targets = get_config().revenue_targets
-    return getattr(targets, period, 10000)
+    return float(getattr(targets, period, 10000))
