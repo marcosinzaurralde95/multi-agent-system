@@ -46,6 +46,7 @@ class Decision:
     description: str
     agents_involved: List[str]
     estimated_impact: float
+    estimated_cost: float = 0.0  # Costo estimado de la decisión
     status: str
     created_at: datetime
     decided_at: Optional[datetime] = None
@@ -78,6 +79,13 @@ class DirectorAgent(BaseAgent):
             "weekly": RevenueGoal(target=cfg.revenue_targets.weekly, current=0, period="weekly"),
             "monthly": RevenueGoal(target=cfg.revenue_targets.monthly, current=0, period="monthly"),
         }
+
+        # --- Guardrails & Budgeting ---
+        self.daily_spend = 0.0
+        self.last_budget_reset = datetime.now().date()
+        self.max_daily_budget = cfg.system.max_daily_budget
+        self.kill_switch = cfg.system.emergency_kill_switch
+        # -----------------------------
 
         self.auto_approval_limit = float((config or {}).get("auto_approval_limit", 100))
         self.human_approval_limit = float((config or {}).get("human_approval_limit", 1000))
@@ -300,8 +308,26 @@ class DirectorAgent(BaseAgent):
             )
 
     def _auto_approve(self, decision: Decision):
+        # --- Guardrail Check ---
+        if self.kill_switch:
+            logger.warning(f"Kill Switch is ACTIVE. Blocking decision {decision.id}")
+            decision.status = "blocked_by_killswitch"
+            return
+
+        # Reset daily budget if date changed
+        if datetime.now().date() > self.last_budget_reset:
+            self.daily_spend = 0.0
+            self.last_budget_reset = datetime.now().date()
+
+        if self.daily_spend + decision.estimated_cost > self.max_daily_budget:
+            logger.warning(f"Daily budget exceeded! Blocking decision {decision.id}")
+            decision.status = "blocked_by_budget"
+            return
+        # -----------------------
+
         decision.status = "approved"
         decision.decided_at = datetime.now()
+        self.daily_spend += decision.estimated_cost
         self.completed_decisions.append(decision)
         if decision in self.pending_decisions:
             self.pending_decisions.remove(decision)

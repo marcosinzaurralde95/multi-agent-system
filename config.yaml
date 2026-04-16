@@ -17,6 +17,7 @@ system:
     max_concurrent_agents: 10
     task_timeout_seconds: 300
     retry_attempts: 3
+    emergency_kill_switch: false  # Si es true, se bloquean todas las transacciones financieras
     
   # Metas de Revenue
   revenue_targets:

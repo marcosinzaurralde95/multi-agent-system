@@ -32,6 +32,7 @@ class SystemConfig:
     max_concurrent_agents: int = 10
     task_timeout_seconds: int = 300
     retry_attempts: int = 3
+    emergency_kill_switch: bool = False
 
 
 @dataclass
