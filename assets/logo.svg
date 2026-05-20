@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 520" role="img" aria-labelledby="title desc">
+  <title id="title">Local AI Cinematic 3D SaaS</title>
+  <desc id="desc">Logo geométrico con núcleo de IA y órbitas luminosas.</desc>
+  <defs>
+    <radialGradient id="core" cx="50%" cy="45%" r="55%">
+      <stop offset="0" stop-color="#facc15"/>
+      <stop offset=".42" stop-color="#38bdf8"/>
+      <stop offset="1" stop-color="#0f172a"/>
+    </radialGradient>
+    <linearGradient id="ring" x1="80" x2="440" y1="120" y2="400" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#38bdf8"/>
+      <stop offset=".5" stop-color="#f472b6"/>
+      <stop offset="1" stop-color="#10b981"/>
+    </linearGradient>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="10" result="blur"/>
+      <feColorMatrix in="blur" values="0 0 0 0 0.22 0 0 0 0 0.74 0 0 0 0 0.97 0 0 0 .9 0"/>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="520" height="520" rx="120" fill="#020617"/>
+  <circle cx="260" cy="260" r="158" fill="url(#core)" opacity=".95" filter="url(#glow)"/>
+  <path d="M116 263c42-82 246-82 288 0-42 82-246 82-288 0Z" fill="none" stroke="url(#ring)" stroke-width="22" opacity=".88"/>
+  <path d="M260 82c86 53 86 303 0 356-86-53-86-303 0-356Z" fill="none" stroke="#38bdf8" stroke-width="18" opacity=".62"/>
+  <circle cx="260" cy="260" r="58" fill="#020617" stroke="#e5e7eb" stroke-width="10"/>
+  <path d="M228 278h64m-48-36h32m-50 72 68-108" stroke="#facc15" stroke-width="18" stroke-linecap="round"/>
+</svg>
